@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const cors = require('cors');
+const fs = require('fs');
 const upload = multer({ dest: 'uploads/' });
 
 // Configure Cloudinary with your account details
@@ -41,9 +42,32 @@ app.post('/upload', upload.array('images'), async (req, res) => {
 
     const imagePaths = req.files.map((file) => file.path);
     const imageUrls = await uploadImages(imagePaths);
+
+    // Save URLs to a JSON file
+    const jsonFilePath = 'image-urls.json';
+    let existingUrls = [];
+    if (fs.existsSync(jsonFilePath)) {
+      const fileData = fs.readFileSync(jsonFilePath, 'utf-8');
+      existingUrls = JSON.parse(fileData);
+    }
+    const updatedUrls = [...existingUrls, ...imageUrls];
+    fs.writeFileSync(jsonFilePath, JSON.stringify(updatedUrls, null, 2));
+
     res.json({ imageUrls });
   } catch (error) {
     res.status(500).json({ error: 'Error uploading images' });
+  }
+});
+
+// New route to get the saved links from the JSON file
+app.get('/links', (req, res) => {
+  const jsonFilePath = 'image-urls.json';
+  if (fs.existsSync(jsonFilePath)) {
+    const fileData = fs.readFileSync(jsonFilePath, 'utf-8');
+    const savedLinks = JSON.parse(fileData);
+    res.json(savedLinks);
+  } else {
+    res.status(404).json({ error: 'No saved links found' });
   }
 });
 
