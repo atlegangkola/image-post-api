@@ -4,22 +4,24 @@
   <title>Image Uploader</title>
 </head>
 <body>
-  <input type="file" id="imageInput" />
-  <button onclick="uploadImage()">Upload Image</button>
-  <img id="uploadedImage" style="display: none;" />
+  <input type="file" id="imageInput" multiple />
+  <button onclick="uploadImages()">Upload Images</button>
+  <div id="uploadedImages"></div>
 
   <script>
-    async function uploadImage() {
+    async function uploadImages() {
       const fileInput = document.getElementById('imageInput');
-      const file = fileInput.files[0];
+      const files = fileInput.files;
 
-      if (!file) {
-        alert('Please select an image file');
+      if (files.length === 0) {
+        alert('Please select one or more image files');
         return;
       }
 
       const formData = new FormData();
-      formData.append('image', file);
+      for (const file of files) {
+        formData.append('images', file);
+      }
 
       try {
         const response = await fetch('http://localhost:3000/upload', {
@@ -30,14 +32,18 @@
         const data = await response.json();
 
         if (response.ok) {
-          const imageElement = document.getElementById('uploadedImage');
-          imageElement.src = data.imageUrl;
-          imageElement.style.display = 'block';
+          const imagesContainer = document.getElementById('uploadedImages');
+          imagesContainer.innerHTML = '';
+          for (const imageUrl of data.imageUrls) {
+            const imageElement = document.createElement('img');
+            imageElement.src = imageUrl;
+            imagesContainer.appendChild(imageElement);
+          }
         } else {
-          alert('Error uploading image:', data.error);
+          alert('Error uploading images:', data.error);
         }
       } catch (error) {
-        console.error('Error uploading image:', error);
+        console.error('Error uploading images:', error);
       }
     }
   </script>

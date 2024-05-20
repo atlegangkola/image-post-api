@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
-const cors = require('cors'); // Import cors
+const cors = require('cors');
 const upload = multer({ dest: 'uploads/' });
 
 // Configure Cloudinary with your account details
@@ -12,33 +12,38 @@ cloudinary.config({
 });
 
 const app = express();
-app.use(cors()); // Enable CORS for all routes
+app.use(cors());
 
-// Function to upload an image to Cloudinary
-const uploadImage = async (imagePath) => {
+// Function to upload images to Cloudinary
+const uploadImages = async (imagePaths) => {
   try {
-    const result = await cloudinary.uploader.upload(imagePath, {
-      folder: 'your_folder_name',
-    });
-    console.log('Image uploaded successfully:', result.secure_url);
-    return result.secure_url;
+    const uploadedImages = [];
+    for (const imagePath of imagePaths) {
+      const result = await cloudinary.uploader.upload(imagePath, {
+        folder: 'your_folder_name',
+      });
+      uploadedImages.push(result.secure_url);
+    }
+    console.log('Images uploaded successfully');
+    return uploadedImages;
   } catch (error) {
-    console.error('Error uploading image:', error);
+    console.error('Error uploading images:', error);
     throw error;
   }
 };
 
 // Route to handle image upload
-app.post('/upload', upload.single('image'), async (req, res) => {
+app.post('/upload', upload.array('images'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No image file provided' });
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No image files provided' });
     }
 
-    const imageUrl = await uploadImage(req.file.path);
-    res.json({ imageUrl });
+    const imagePaths = req.files.map((file) => file.path);
+    const imageUrls = await uploadImages(imagePaths);
+    res.json({ imageUrls });
   } catch (error) {
-    res.status(500).json({ error: 'Error uploading image' });
+    res.status(500).json({ error: 'Error uploading images' });
   }
 });
 
