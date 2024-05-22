@@ -3,6 +3,8 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const cors = require('cors');
 const fs = require('fs');
+const bodyParser = require('body-parser'); // Import body-parser
+
 const upload = multer({ dest: 'uploads/' });
 
 // Configure Cloudinary with your account details
@@ -14,6 +16,7 @@ cloudinary.config({
 
 const app = express();
 app.use(cors());
+app.use(bodyParser.json()); // Use body-parser middleware
 
 // Function to upload images to Cloudinary
 const uploadImages = async (imagePaths) => {
